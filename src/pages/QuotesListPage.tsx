@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Download, FileText, Plus, RefreshCw } from 'lucide-react';
+import { Download, FileText, Plus, RefreshCw, Upload } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 interface Quote {
@@ -60,6 +60,35 @@ export function QuotesListPage() {
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Error al descargar');
     }
+  }
+
+  async function handleUpload(quote: Quote, file: File) {
+    if (!quote.id) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setLoading(true);
+      const resp = await fetch(`${apiBaseUrl}/quotes/${quote.id}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!resp.ok) throw new Error('Error al subir el archivo');
+
+      alert('Archivo reemplazado correctamente en el storage');
+      loadQuotes();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Error al subir');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function triggerUpload(quoteId: string | number) {
+    const input = document.getElementById(`upload-${quoteId}`) as HTMLInputElement;
+    if (input) input.click();
   }
 
   function formatDate(value: string | number | undefined) {
@@ -176,13 +205,34 @@ export function QuotesListPage() {
                       {formatDate(quote.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownload(quote)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      <div className="flex justify-end gap-1">
+                        <input
+                          type="file"
+                          id={`upload-${quote.id}`}
+                          className="hidden"
+                          accept=".xlsx"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUpload(quote, file);
+                          }}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => triggerUpload(quote.id!)}
+                          title="Reemplazar archivo Excel en Storage"
+                        >
+                          <Upload className="h-4 w-4 text-orange-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownload(quote)}
+                          title="Descargar archivo"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
