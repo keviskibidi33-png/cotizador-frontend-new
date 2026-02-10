@@ -104,12 +104,17 @@ export function QuoteBuilderPage() {
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const urlParams = useMemo(() => getUrlParams(), []);
 
+  // Helper for local date YYYY-MM-DD (Forces Peru Time)
+  const getLocalDate = () => {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+  };
+
   const [includeIgv, setIncludeIgv] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false); // Modo edición
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null); // ID de cotización siendo editada
   const [header, setHeader] = useState<Omit<QuotePayload, 'include_igv' | 'igv_rate' | 'items'>>({
-    fecha_emision: new Date().toISOString().slice(0, 10),
-    fecha_solicitud: new Date().toISOString().slice(0, 10),
+    fecha_emision: getLocalDate(),
+    fecha_solicitud: getLocalDate(),
     cliente: '',
     ruc: '',
     contacto: '',
@@ -458,8 +463,8 @@ export function QuoteBuilderPage() {
 
         // Cargar header
         setHeader({
-          fecha_emision: data.fecha_emision || new Date().toISOString().slice(0, 10),
-          fecha_solicitud: data.fecha_solicitud || new Date().toISOString().slice(0, 10),
+          fecha_emision: data.fecha_emision || getLocalDate(),
+          fecha_solicitud: data.fecha_solicitud || getLocalDate(),
           cliente: data.cliente || '',
           ruc: data.ruc || '',
           contacto: data.contacto || '',
@@ -575,8 +580,8 @@ export function QuoteBuilderPage() {
     localStorage.removeItem('cotizacion_draft');
     // Reset form
     setHeader({
-      fecha_emision: new Date().toISOString().slice(0, 10),
-      fecha_solicitud: new Date().toISOString().slice(0, 10),
+      fecha_emision: getLocalDate(),
+      fecha_solicitud: getLocalDate(),
       cliente: '',
       ruc: '',
       contacto: '',
@@ -1036,8 +1041,8 @@ export function QuoteBuilderPage() {
 
         // Resetear formulario a estado inicial
         setHeader({
-          fecha_emision: new Date().toISOString().slice(0, 10),
-          fecha_solicitud: new Date().toISOString().slice(0, 10),
+          fecha_emision: getLocalDate(),
+          fecha_solicitud: getLocalDate(),
           cliente: '',
           ruc: '',
           contacto: '',
