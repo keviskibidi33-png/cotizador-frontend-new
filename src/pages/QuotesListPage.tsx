@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Download, FileText, Plus, RefreshCw, Upload } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { authFetch } from '../lib/authFetch';
 
 interface Quote {
   id?: number;
@@ -29,7 +30,7 @@ export function QuotesListPage() {
     setLoading(true);
     setError(null);
     try {
-      const resp = await fetch(`${apiBaseUrl}/quotes`);
+      const resp = await authFetch(`${apiBaseUrl}/quotes`);
       if (!resp.ok) throw new Error('Error al cargar cotizaciones');
       const data = await resp.json();
       setQuotes(data.quotes || []);
@@ -47,7 +48,7 @@ export function QuotesListPage() {
   async function handleDownload(quote: Quote) {
     try {
       if (quote.id) {
-        const resp = await fetch(`${apiBaseUrl}/quotes/${quote.id}/download`);
+        const resp = await authFetch(`${apiBaseUrl}/quotes/${quote.id}/download`);
         if (!resp.ok) throw new Error('Error al descargar');
         const blob = await resp.blob();
         const url = window.URL.createObjectURL(blob);
@@ -70,7 +71,7 @@ export function QuotesListPage() {
 
     try {
       setLoading(true);
-      const resp = await fetch(`${apiBaseUrl}/quotes/${quote.id}/upload`, {
+      const resp = await authFetch(`${apiBaseUrl}/quotes/${quote.id}/upload`, {
         method: 'POST',
         body: formData,
       });

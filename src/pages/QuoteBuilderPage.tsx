@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Plus, Trash2, Download, Building2, FolderOpen, Save, FileText } from 'lucide-react';
+import { authFetch } from '../lib/authFetch';
 
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -211,7 +212,7 @@ export function QuoteBuilderPage() {
 
     setLoadingPlantillas(true);
     try {
-      const resp = await fetch(`${apiBaseUrl}/plantillas?vendedor_id=${vendedorId}`);
+      const resp = await authFetch(`${apiBaseUrl}/plantillas?vendedor_id=${vendedorId}`);
       if (resp.ok) {
         const data = await resp.json();
         console.log('Plantillas cargadas del backend:', data);
@@ -268,7 +269,7 @@ export function QuoteBuilderPage() {
       console.log('Items:', items);
       console.log('Condiciones seleccionadas:', selectedCondiciones);
 
-      const resp = await fetch(`${apiBaseUrl}/plantillas`, {
+      const resp = await authFetch(`${apiBaseUrl}/plantillas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -297,7 +298,7 @@ export function QuoteBuilderPage() {
 
     setDeletingPlantilla(true);
     try {
-      const resp = await fetch(`${apiBaseUrl}/plantillas/${plantillaToDelete.id}`, {
+      const resp = await authFetch(`${apiBaseUrl}/plantillas/${plantillaToDelete.id}`, {
         method: 'DELETE'
       });
 
@@ -323,7 +324,7 @@ export function QuoteBuilderPage() {
 
   const handleLoadPlantilla = async (plantillaId: string) => {
     try {
-      const resp = await fetch(`${apiBaseUrl}/plantillas/${plantillaId}`);
+      const resp = await authFetch(`${apiBaseUrl}/plantillas/${plantillaId}`);
       if (!resp.ok) throw new Error('Error al cargar plantilla');
 
       const plantilla = await resp.json();
@@ -409,7 +410,7 @@ export function QuoteBuilderPage() {
   useEffect(() => {
     async function loadCondiciones() {
       try {
-        const resp = await fetch(`${apiBaseUrl}/condiciones`);
+        const resp = await authFetch(`${apiBaseUrl}/condiciones`);
         const data = await resp.json();
         setCondiciones(data.data || []);
       } catch (err) {
@@ -456,7 +457,7 @@ export function QuoteBuilderPage() {
 
     async function loadQuote() {
       try {
-        const resp = await fetch(`${apiBaseUrl}/quotes/${urlParams.quote_id}`);
+        const resp = await authFetch(`${apiBaseUrl}/quotes/${urlParams.quote_id}`);
         if (!resp.ok) throw new Error('Error cargando cotización');
 
         const { data } = await resp.json();
@@ -620,7 +621,7 @@ export function QuoteBuilderPage() {
   // Función para recargar condiciones
   async function reloadCondiciones() {
     try {
-      const resp = await fetch(`${apiBaseUrl}/condiciones`);
+      const resp = await authFetch(`${apiBaseUrl}/condiciones`);
       const data = await resp.json();
       setCondiciones(data.data || []);
     } catch (err) {
@@ -640,7 +641,7 @@ export function QuoteBuilderPage() {
     try {
       const vendedorId = currentUser?.id || urlParams.user_id;
 
-      const resp = await fetch(`${apiBaseUrl}/condiciones`, {
+      const resp = await authFetch(`${apiBaseUrl}/condiciones`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -676,7 +677,7 @@ export function QuoteBuilderPage() {
   async function deleteCondicion(id: string) {
     setDeletingCondicion(true);
     try {
-      const resp = await fetch(`${apiBaseUrl}/condiciones/${id}`, {
+      const resp = await authFetch(`${apiBaseUrl}/condiciones/${id}`, {
         method: 'DELETE',
       });
 
@@ -715,7 +716,7 @@ export function QuoteBuilderPage() {
     async function loadNext() {
       try {
         setError(null);
-        const resp = await fetch(`${apiBaseUrl}/quote/next-number`, {
+        const resp = await authFetch(`${apiBaseUrl}/quote/next-number`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fecha_emision: header.fecha_emision }),
@@ -806,7 +807,7 @@ export function QuoteBuilderPage() {
   // Load condiciones from backend
   const loadCondiciones = useCallback(async () => {
     try {
-      const resp = await fetch(`${apiBaseUrl}/condiciones`);
+      const resp = await authFetch(`${apiBaseUrl}/condiciones`);
       const data = await resp.json();
       setCondiciones(data.data || []);
     } catch (err) {
@@ -822,7 +823,7 @@ export function QuoteBuilderPage() {
   // Search clients
   const searchClientes = useCallback(async (search: string) => {
     try {
-      const resp = await fetch(`${apiBaseUrl}/clientes?search=${encodeURIComponent(search)}`);
+      const resp = await authFetch(`${apiBaseUrl}/clientes?search=${encodeURIComponent(search)}`);
       const data = await resp.json();
       setClientes(data.data || []);
     } catch { setClientes([]); }
@@ -841,7 +842,7 @@ export function QuoteBuilderPage() {
       if (actualSearch) params.append('search', actualSearch);
 
       url += params.toString();
-      const resp = await fetch(url);
+      const resp = await authFetch(url);
       const data = await resp.json();
       setProyectos(data.data || []);
     } catch { setProyectos([]); }
@@ -882,7 +883,7 @@ export function QuoteBuilderPage() {
   async function createNewCliente() {
     if (!newCliente.nombre.trim()) return;
     try {
-      const resp = await fetch(`${apiBaseUrl}/clientes`, {
+      const resp = await authFetch(`${apiBaseUrl}/clientes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -903,7 +904,7 @@ export function QuoteBuilderPage() {
   async function createNewProyecto() {
     if (!newProyecto.nombre.trim() || !selectedCliente) return;
     try {
-      const resp = await fetch(`${apiBaseUrl}/proyectos`, {
+      const resp = await authFetch(`${apiBaseUrl}/proyectos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -969,7 +970,7 @@ export function QuoteBuilderPage() {
 
       console.log('Sending Payload:', payload);
 
-      const resp = await fetch(endpoint, {
+      const resp = await authFetch(endpoint, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
