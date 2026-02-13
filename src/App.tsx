@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { QuoteBuilderPage } from './pages/QuoteBuilderPage';
 import { QuotesListPage } from './pages/QuotesListPage';
+import { SessionGuard } from './components/SessionGuard';
 
 // Capture auth token from URL (passed by CRM shell) and persist it
 function useTokenHandler() {
@@ -20,8 +21,8 @@ export default function App() {
   const path = window.location.pathname;
   
   if (path === '/quotes' || path === '/list') {
-    return <QuotesListPage />;
+    return <><SessionGuard /><QuotesListPage /></>;
   }
   
-  return <QuoteBuilderPage />;
+  return <><SessionGuard /><QuoteBuilderPage /></>;
 }
