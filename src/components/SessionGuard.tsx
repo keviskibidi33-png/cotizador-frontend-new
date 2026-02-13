@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const REFRESH_INTERVAL_MS = 45 * 60 * 1000; // 45 min — Supabase tokens expire at 60 min
+const REFRESH_INTERVAL_MS = 60 * 60 * 1000; // 60 min — refresh every hour
 
 /**
  * SessionGuard — handles two responsibilities:
