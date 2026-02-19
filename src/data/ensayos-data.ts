@@ -779,7 +779,7 @@ export const ensayosData: EnsayoItem[] = [
   {
     codigo: 'SU23',
     descripcion: 'Límite líquido y Límite Plástico del Suelo',
-    norma: 'ASTM D4318-17?1',
+    norma: 'ASTM D4318-17ε1',
     acreditado: 'SI',
     referenciaOtraNorma: '-',
     ubicacion: 'LABORATORIO',
