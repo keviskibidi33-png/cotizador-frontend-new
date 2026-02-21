@@ -977,8 +977,15 @@ export function QuoteBuilderPage() {
       });
 
       if (!resp.ok) {
-        const txt = await resp.text();
-        throw new Error(txt || `HTTP ${resp.status}`);
+        let message = `HTTP ${resp.status}`;
+        try {
+          const errJson = await resp.json();
+          message = errJson?.detail || errJson?.message || JSON.stringify(errJson);
+        } catch {
+          const txt = await resp.text();
+          if (txt) message = txt;
+        }
+        throw new Error(message);
       }
 
       // Si es actualización, manejar respuesta JSON
@@ -1132,6 +1139,7 @@ export function QuoteBuilderPage() {
                 type="text"
                 value={quoteNumber}
                 onChange={(e) => setQuoteNumber(e.target.value.replace(/\D/g, '').slice(0, 5) || '001')}
+                title="Número de cotización"
                 className="w-20 rounded border border-slate-300 px-2 py-1 text-center font-semibold focus:border-blue-500 focus:outline-none"
                 maxLength={5}
               />
