@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Plus, Trash2, Download, Building2, FolderOpen, Save, FileText } from 'lucide-react';
 import { authFetch } from '../lib/authFetch';
-import { toast } from 'sonner';
 
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -989,9 +988,12 @@ export function QuoteBuilderPage() {
       const proyectoNombre = proyectoSearch.trim();
       if (!selectedProyecto) {
         if (!selectedCliente) {
-          toast.error("Selecciona un cliente antes de guardar", {
-            description: "El proyecto debe estar vinculado a un cliente."
+          setNotification({
+            show: true,
+            message: "Selecciona un cliente antes de guardar. El proyecto debe estar vinculado a un cliente.",
+            type: 'error'
           });
+          setTimeout(() => setNotification(null), 3000);
           setExporting(false);
           return;
         }
@@ -999,18 +1001,24 @@ export function QuoteBuilderPage() {
         if (!proyectoNombre) {
           setNewProyecto({ nombre: '', ubicacion: header.ubicacion || '' });
           setShowNewProyectoModal(true);
-          toast.error("Proyecto requerido", {
-            description: "Crea o selecciona un proyecto antes de guardar."
+          setNotification({
+            show: true,
+            message: "Proyecto requerido. Crea o selecciona un proyecto antes de guardar.",
+            type: 'error'
           });
+          setTimeout(() => setNotification(null), 3000);
           setExporting(false);
           return;
         }
 
         setNewProyecto({ nombre: proyectoNombre, ubicacion: header.ubicacion || '' });
         setShowNewProyectoModal(true);
-        toast.error("Crea el proyecto", {
-          description: "Debes crear o seleccionar un proyecto para continuar."
+        setNotification({
+          show: true,
+          message: "Debes crear o seleccionar un proyecto para continuar.",
+          type: 'error'
         });
+        setTimeout(() => setNotification(null), 3000);
         setExporting(false);
         return;
       }
