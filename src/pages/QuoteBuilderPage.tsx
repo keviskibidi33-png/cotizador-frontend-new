@@ -548,6 +548,42 @@ export function QuoteBuilderPage() {
           });
         }
 
+        // Fallback: resolve cliente/proyecto when IDs are missing (legacy quotes)
+        if (!data.cliente_id && data.cliente) {
+          try {
+            const resp = await authFetch(`${apiBaseUrl}/clientes?search=${encodeURIComponent(data.cliente)}`);
+            const result = await resp.json();
+            const candidates = result.data || [];
+            const clienteMatch = candidates.find((c: any) => {
+              const nombre = String(c.nombre || '').toLowerCase();
+              const empresa = String(c.empresa || '').toLowerCase();
+              const target = String(data.cliente || '').toLowerCase();
+              if (data.ruc && c.ruc === data.ruc) return true;
+              return nombre === target || empresa === target;
+            });
+
+            if (clienteMatch) {
+              setSelectedCliente(clienteMatch);
+              setHeader(prev => ({ ...prev, cliente_id: clienteMatch.id }));
+
+              if (!data.proyecto_id && data.proyecto) {
+                const projResp = await authFetch(`${apiBaseUrl}/proyectos?cliente_id=${encodeURIComponent(clienteMatch.id)}&search=${encodeURIComponent(data.proyecto)}`);
+                const projResult = await projResp.json();
+                const projCandidates = projResult.data || [];
+                const proyectoMatch = projCandidates.find((p: any) => String(p.nombre || '').toLowerCase() === String(data.proyecto || '').toLowerCase());
+
+                if (proyectoMatch) {
+                  setSelectedProyecto(proyectoMatch);
+                  setHeader(prev => ({ ...prev, proyecto_id: proyectoMatch.id }));
+                  setProyectoSearch(proyectoMatch.nombre || data.proyecto || '');
+                }
+              }
+            }
+          } catch (err) {
+            console.warn('Fallback cliente/proyecto failed:', err);
+          }
+        }
+
         setNotification({ show: true, message: 'Cotización cargada para editar', type: 'success' });
         setTimeout(() => setNotification(null), 3000);
       } catch (err) {
@@ -860,6 +896,9 @@ export function QuoteBuilderPage() {
       contacto: c.contacto || '',
       telefono_contacto: c.telefono || '',
       correo: c.email || '',
+      cliente_id: c.id,
+      proyecto: '',
+      proyecto_id: undefined,
     }));
     setSelectedProyecto(null); // Clear selected project when client changes
     setProyectoSearch(''); // Clear project search when client changes
@@ -875,6 +914,7 @@ export function QuoteBuilderPage() {
       ...prev,
       proyecto: p.nombre,
       ubicacion: p.ubicacion || p.direccion || '',
+      proyecto_id: p.id,
       // Mantener los datos del vendedor actual, no sobrescribir con el vendedor que creó el proyecto
     }));
   }
@@ -945,6 +985,35 @@ export function QuoteBuilderPage() {
     setExporting(true);
     setError(null);
     try {
+      const proyectoNombre = proyectoSearch.trim();
+      if (!selectedProyecto) {
+        if (!selectedCliente) {
+          toast.error("Selecciona un cliente antes de guardar", {
+            description: "El proyecto debe estar vinculado a un cliente."
+          });
+          setExporting(false);
+          return;
+        }
+
+        if (!proyectoNombre) {
+          setNewProyecto({ nombre: '', ubicacion: header.ubicacion || '' });
+          setShowNewProyectoModal(true);
+          toast.error("Proyecto requerido", {
+            description: "Crea o selecciona un proyecto antes de guardar."
+          });
+          setExporting(false);
+          return;
+        }
+
+        setNewProyecto({ nombre: proyectoNombre, ubicacion: header.ubicacion || '' });
+        setShowNewProyectoModal(true);
+        toast.error("Crea el proyecto", {
+          description: "Debes crear o seleccionar un proyecto para continuar."
+        });
+        setExporting(false);
+        return;
+      }
+
       const payload: QuotePayload = {
         ...header,
         // Prefer existing email if editing, else current user
@@ -1222,7 +1291,19 @@ export function QuoteBuilderPage() {
               <Label className="flex items-center gap-2"><FolderOpen className="h-4 w-4" /> Proyecto</Label>
               <Input
                 value={proyectoSearch}
-                onChange={(e) => { setProyectoSearch(e.target.value); setShowProyectoDropdown(true); }}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setProyectoSearch(value);
+                  setShowProyectoDropdown(true);
+                  if (selectedProyecto && selectedProyecto.nombre !== value) {
+                    setSelectedProyecto(null);
+                  }
+                  setHeader((prev) => ({
+                    ...prev,
+                    proyecto: value,
+                    proyecto_id: (selectedProyecto && selectedProyecto.nombre === value) ? selectedProyecto.id : undefined,
+                  }));
+                }}
                 onFocus={() => { setShowProyectoDropdown(true); }}
                 onClick={() => { setShowProyectoDropdown(true); }}
                 placeholder={selectedCliente ? "Buscar proyecto..." : "Busca proyecto o selecciona cliente"}
