@@ -1,40 +1,63 @@
 import { useState, useEffect } from 'react';
+import { requestTokenRefreshFromParent, storeToken } from '../lib/tokenBridge';
 
-const REFRESH_INTERVAL_MS = 60 * 60 * 1000; // 60 min — refresh every hour
+const REFRESH_INTERVAL_MS = 45 * 60 * 1000; // Refresh before the common 60 min JWT expiry window
 
 /**
  * SessionGuard — handles two responsibilities:
- * 1. Auto-refreshes the JWT token from the CRM parent via postMessage every 45 min
+ * 1. Auto-refreshes the JWT token from the CRM parent before expiry
  * 2. Shows a beautiful modal if a 401 is detected (session-expired event)
  */
 export function SessionGuard() {
     const [expired, setExpired] = useState(false);
 
     useEffect(() => {
+        const requestRefresh = (reason: string) => {
+            void requestTokenRefreshFromParent(reason).then((token) => {
+                if (token) {
+                    console.log('[SessionGuard] Token refreshed from CRM', { reason });
+                }
+            });
+        };
+
         // ── 1. Listen for session-expired events (fired by API interceptors on 401) ──
         const onExpired = () => setExpired(true);
         window.addEventListener('session-expired', onExpired);
 
         // ── 2. Auto-refresh: request fresh token from CRM parent periodically ──
         const interval = setInterval(() => {
-            if (window.parent !== window) {
-                window.parent.postMessage({ type: 'TOKEN_REFRESH_REQUEST' }, '*');
-            }
+            requestRefresh('interval');
         }, REFRESH_INTERVAL_MS);
+
+        const onVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                requestRefresh('visibility');
+            }
+        };
+
+        const onFocus = () => {
+            requestRefresh('focus');
+        };
 
         // ── 3. Listen for token refresh responses from CRM parent ──
         const onMessage = (e: MessageEvent) => {
             if (e.data?.type === 'TOKEN_REFRESH' && e.data.token) {
                 console.log('[SessionGuard] Token auto-refreshed from CRM');
-                localStorage.setItem('token', e.data.token);
+                storeToken(e.data.token);
             }
         };
         window.addEventListener('message', onMessage);
+        window.addEventListener('focus', onFocus);
+        document.addEventListener('visibilitychange', onVisibility);
+
+        requestRefresh('mount');
 
         return () => {
             window.removeEventListener('session-expired', onExpired);
             clearInterval(interval);
             window.removeEventListener('message', onMessage);
+            window.removeEventListener('focus', onFocus);
+            document.removeEventListener('visibilitychange', onVisibility);
         };
     }, []);
 
